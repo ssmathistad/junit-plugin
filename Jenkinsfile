@@ -1,9 +1,17 @@
 pipeline {
     agent any
+    
+    parameters {
+        string(name: 'ARTIFACTORY_SERVER', defaultValue: 'repo_key')
+        string(name: 'SERVER_URL', defaultValue: '')
+        string(name: 'MAVEN_TOOL', defaultValue: 'mmaven')
+        password(name: 'USER', defaultValue: 'SECRET')
+        password(name: 'PASSWORD', defaultValue: 'SECRET')
+    }
 
     tools {
         // Install the Maven version configured as "mmaven" and add it to the path.
-        maven MAVEN_TOOL
+        maven params.MAVEN_TOOL
     }
     
     environment {
@@ -27,10 +35,13 @@ pipeline {
         }
         
         stage('Deploy') {
+            when {
+                branch 'master'   
+            }
             steps {
                 junit '**/target/surefire-reports/TEST-*.xml'
-                archiveArtifacts 'target/*.jar'  
-                sh 'jfrog rt u "target/*.jar" ${ARTIFACTORY_SERVER} --url=${SERVER_URL} --user=$USER --password=$PASSWORD'
+                archiveArtifacts 'target/*.jar'
+                sh "jfrog rt u 'target/*.jar' $params.ARTIFACTORY_SERVER --url=$params.SERVER_URL --user=$params.USER --password=$params.PASSWORD"
             }
         }
     }
